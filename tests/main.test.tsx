@@ -6,7 +6,7 @@ const createRootMock = vi.hoisted(() => vi.fn(() => ({ render: renderMock })));
 vi.mock("react-dom/client", () => ({
   createRoot: createRootMock,
 }));
-vi.mock("@/app/App", () => ({
+vi.mock("@/app/shell/App", () => ({
   App: () => null,
 }));
 
