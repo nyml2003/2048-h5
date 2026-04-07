@@ -2,9 +2,11 @@ import { BOARD_SIZE } from "@/game/constants";
 import { getTileColor } from "@/game/pieces";
 import type { BoardCell, GameState } from "@/game/types";
 
-const BACKGROUND_COLOR = "#111a2a";
-const GRID_COLOR = "rgba(255, 255, 255, 0.06)";
-const TEXT_COLOR = "#f4f7ff";
+const GRID_TOP_COLOR = "#86512f";
+const GRID_BOTTOM_COLOR = "#613722";
+const GRID_LINE_COLOR = "rgba(255, 244, 232, 0.08)";
+const LIGHT_TEXT_COLOR = "#fff7ef";
+const DARK_TEXT_COLOR = "#2d1d11";
 
 function setupCanvas(canvas: HTMLCanvasElement) {
   const context = canvas.getContext("2d");
@@ -40,7 +42,11 @@ function drawBackground(
   width: number,
   height: number
 ) {
-  context.fillStyle = BACKGROUND_COLOR;
+  const gradient = context.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, GRID_TOP_COLOR);
+  gradient.addColorStop(1, GRID_BOTTOM_COLOR);
+
+  context.fillStyle = gradient;
   context.fillRect(0, 0, width, height);
 }
 
@@ -51,24 +57,23 @@ function drawTile(
   value: BoardCell,
   cellSize: number
 ) {
-  const inset = Math.max(2, cellSize * 0.06);
+  const inset = Math.max(4, cellSize * 0.08);
   const x = column * cellSize;
   const y = row * cellSize;
+  const tileWidth = Math.max(1, cellSize - inset * 2);
+  const tileHeight = Math.max(1, cellSize - inset * 2);
 
   context.fillStyle = getTileColor(value);
-  context.fillRect(
-    x + inset,
-    y + inset,
-    Math.max(1, cellSize - inset * 2),
-    Math.max(1, cellSize - inset * 2)
-  );
+  context.fillRect(x + inset, y + inset, tileWidth, tileHeight);
+  context.fillStyle = "rgba(255, 255, 255, 0.16)";
+  context.fillRect(x + inset, y + inset, tileWidth, Math.max(2, tileHeight * 0.14));
 
   if (value === null) {
     return;
   }
 
-  context.fillStyle = TEXT_COLOR;
-  context.font = `600 ${Math.max(12, Math.floor(cellSize * 0.34))}px ui-sans-serif`;
+  context.fillStyle = value >= 16 ? LIGHT_TEXT_COLOR : DARK_TEXT_COLOR;
+  context.font = `800 ${Math.max(12, Math.floor(cellSize * 0.32))}px "Trebuchet MS", "Segoe UI", sans-serif`;
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.fillText(String(value), x + cellSize / 2, y + cellSize / 2);
@@ -86,8 +91,24 @@ export function drawGameBoard(canvas: HTMLCanvasElement, state: GameState) {
   const cellSize = size / BOARD_SIZE;
 
   drawBackground(context, width, height);
-  context.strokeStyle = GRID_COLOR;
+  context.save();
+  context.strokeStyle = GRID_LINE_COLOR;
   context.lineWidth = 1;
+
+  for (let index = 1; index < BOARD_SIZE; index += 1) {
+    const offset = Math.round(index * cellSize) + 0.5;
+
+    context.beginPath();
+    context.moveTo(offset, 0);
+    context.lineTo(offset, size);
+    context.stroke();
+
+    context.beginPath();
+    context.moveTo(0, offset);
+    context.lineTo(size, offset);
+    context.stroke();
+  }
+  context.restore();
 
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let column = 0; column < BOARD_SIZE; column += 1) {
@@ -113,13 +134,15 @@ export function drawPreview(canvas: HTMLCanvasElement, tileValue: unknown) {
   drawBackground(context, width, height);
   context.fillStyle = getTileColor(value);
   context.fillRect(x, y, tileSize, tileSize);
+  context.fillStyle = "rgba(255, 255, 255, 0.16)";
+  context.fillRect(x, y, tileSize, Math.max(2, tileSize * 0.14));
 
   if (value === null) {
     return;
   }
 
-  context.fillStyle = TEXT_COLOR;
-  context.font = `600 ${Math.max(12, Math.floor(tileSize * 0.28))}px ui-sans-serif`;
+  context.fillStyle = value >= 16 ? LIGHT_TEXT_COLOR : DARK_TEXT_COLOR;
+  context.font = `800 ${Math.max(12, Math.floor(tileSize * 0.28))}px "Trebuchet MS", "Segoe UI", sans-serif`;
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.fillText(String(value), width / 2, height / 2);

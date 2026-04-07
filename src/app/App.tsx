@@ -1,11 +1,13 @@
 import "@/app/App.css";
 
-import type { CSSProperties, PointerEventHandler } from "react";
+import type { PointerEventHandler, RefObject } from "react";
 
-import { getTileColor } from "@/game/pieces";
-
+import type { CanvasRenderer } from "@/canvas/canvasRenderer";
+import { useCanvasSurface } from "@/app/useCanvasSurface";
 import { use2048App } from "@/app/useApp";
 import { usePressRepeat } from "@/app/usePressRepeat";
+import { drawGameBoard } from "@/game/render";
+import type { GameState } from "@/game/types";
 
 interface ActionButtonProps {
   label: string;
@@ -65,7 +67,7 @@ interface GameScreenProps {
   modeBadge: string | null;
   keyboardHint: string;
   stats: readonly { label: string; value: string; testId: string }[];
-  board: readonly (readonly number[])[];
+  boardCanvasRef: RefObject<HTMLCanvasElement | null>;
   swipeBind: {
     onPointerDown: PointerEventHandler<HTMLElement>;
     onPointerUp: PointerEventHandler<HTMLElement>;
@@ -146,18 +148,9 @@ function ControlButton({
   );
 }
 
-function TileCell({ value }: { value: number }) {
-  const style: CSSProperties & Record<"--tile-bg" | "--tile-tone", string> = {
-    "--tile-bg": getTileColor(value === 0 ? null : value),
-    "--tile-tone": value >= 16 ? "#fff7ef" : "#2d1d11",
-  };
-
-  return (
-    <div className="tile-cell" style={style} data-value={value || undefined}>
-      {value > 0 ? value : ""}
-    </div>
-  );
-}
+const gameBoardRenderer: CanvasRenderer<GameState> = {
+  render: drawGameBoard,
+};
 
 function HomeScreen({
   tag,
@@ -278,7 +271,7 @@ function GameScreen({
   modeBadge,
   keyboardHint,
   stats,
-  board,
+  boardCanvasRef,
   swipeBind,
   controls,
   controlsDisabled,
@@ -319,18 +312,13 @@ function GameScreen({
 
       <div className="game-stage" data-testid="game-stage">
         <div className="board-shell">
-          <div
-            className="board-grid"
+          <canvas
+            ref={boardCanvasRef}
+            className="board-canvas"
             aria-label={boardLabel}
             data-testid="board-grid"
             {...swipeBind}
-          >
-            {board.map((row, rowIndex) =>
-              row.map((value, columnIndex) => (
-                <TileCell key={`${rowIndex}-${columnIndex}`} value={value} />
-              ))
-            )}
-          </div>
+          />
         </div>
       </div>
 
@@ -443,6 +431,7 @@ const STAT_TEST_IDS = ["stat-score", "stat-best", "stat-moves", "stat-peak"] as 
 
 export function App() {
   const app = use2048App();
+  const boardCanvasRef = useCanvasSurface(app.gameState, gameBoardRenderer);
 
   const summaryStats = app.summaryStats.map((item, index) => ({
     ...item,
@@ -509,7 +498,7 @@ export function App() {
           modeBadge={app.gameModeBadge}
           keyboardHint={app.gameHint}
           stats={summaryStats}
-          board={app.gameBoard}
+          boardCanvasRef={boardCanvasRef}
           swipeBind={app.swipeBind}
           controls={controlEntries}
           controlsDisabled={app.controlsDisabled}

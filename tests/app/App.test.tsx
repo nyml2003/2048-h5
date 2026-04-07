@@ -5,9 +5,14 @@ import { zhCN } from "@/app/copy";
 import { restartGame } from "@/app/gameGateway";
 
 const mockUse2048App = vi.hoisted(() => vi.fn());
+const mockUseCanvasSurface = vi.hoisted(() => vi.fn(() => ({ current: null })));
 
 vi.mock("@/app/useApp", () => ({
   use2048App: mockUse2048App,
+}));
+
+vi.mock("@/app/useCanvasSurface", () => ({
+  useCanvasSurface: mockUseCanvasSurface,
 }));
 
 import { App } from "@/app/App";
@@ -110,6 +115,7 @@ describe("App", () => {
     expect(markup).toContain(zhCN.game.tag);
     expect(markup).toContain(zhCN.game.badge);
     expect(markup).toContain(zhCN.game.aiHint);
+    expect(markup).toContain('data-testid="board-grid"');
     expect(markup).toContain(zhCN.controls.left);
     expect(markup).toContain(zhCN.controls.pause);
   });
